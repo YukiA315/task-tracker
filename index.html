@@ -53,43 +53,61 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 現在時刻を入力
+      const taskList = document.getElementById('task-list');
+
+      // 現在時刻を設定するボタン
       document.getElementById('set-start-time').addEventListener('click', () => {
-        const now = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm形式
+        const now = new Date().toISOString().slice(0, 16);
         document.getElementById('start-time').value = now;
       });
 
       document.getElementById('set-end-time').addEventListener('click', () => {
-        const now = new Date().toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm形式
+        const now = new Date().toISOString().slice(0, 16);
         document.getElementById('end-time').value = now;
       });
 
-      // 記録ボタンが動作するように設定
-      const addTaskButton = document.getElementById('add-task');
-      addTaskButton.addEventListener('click', async () => {
+      // タスクをレンダリング
+      function renderTask(task) {
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task-item';
+        taskItem.innerHTML = `
+          <span><strong>${task.name}</strong> / ${task.date} / ${task.startTime} / ${task.endTime} / ${task.duration} 分</span>
+        `;
+        taskList.appendChild(taskItem);
+      }
+
+      // 記録ボタンがクリックされたとき
+      document.getElementById('add-task').addEventListener('click', async () => {
         const taskName = document.getElementById('task-name').value.trim();
         const startTimeInput = document.getElementById('start-time').value;
         const endTimeInput = document.getElementById('end-time').value;
 
-        // 必須フィールドの確認
         if (!taskName || !startTimeInput || !endTimeInput) {
           alert("タスク名、開始時間、終了時間をすべて入力してください！");
           return;
         }
 
-        // データのフォーマット
+        // 日時のフォーマット調整
         const startDate = new Date(startTimeInput);
         const endDate = new Date(endTimeInput);
-        const duration = Math.round((endDate - startDate) / 1000 / 60); // 合計時間（分）
+
+        const options = { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" };
+        const startTime = startDate.toLocaleTimeString("ja-JP", options);
+        const endTime = endDate.toLocaleTimeString("ja-JP", options);
+        const date = startDate.toLocaleDateString("ja-JP", { year: "2-digit", month: "2-digit", day: "2-digit", weekday: "short" });
+
+        const duration = Math.round((endDate - startDate) / 1000 / 60);
 
         const task = {
           name: taskName,
-          start: startDate.toLocaleString("ja-JP"),
-          end: endDate.toLocaleString("ja-JP"),
+          date: date,
+          startTime: startTime,
+          endTime: endTime,
           duration: duration
         };
 
-        console.log("タスクを記録中:", task);
+        // タスクリストに表示
+        renderTask(task);
 
         // Googleスプレッドシートに送信
         await sendToGoogleSheets(task);
@@ -104,7 +122,7 @@
 
         const data = {
           values: [
-            [task.name, task.start, task.end, `${task.duration} 分`]
+            [task.name, task.date, task.startTime, task.endTime, `${task.duration} 分`]
           ]
         };
 
