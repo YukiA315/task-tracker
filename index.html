@@ -25,9 +25,6 @@
       border: 1px solid #ccc;
       border-radius: 5px;
     }
-    button {
-      margin-left: 10px;
-    }
   </style>
 </head>
 <body>
@@ -38,11 +35,9 @@
     <br>
     <label for="start-time">開始時間:</label>
     <input type="datetime-local" id="start-time">
-    <button type="button" id="set-start-time">現在時刻を設定</button>
     <br>
     <label for="end-time">終了時間:</label>
     <input type="datetime-local" id="end-time">
-    <button type="button" id="set-end-time">現在時刻を設定</button>
     <br>
     <button type="button" id="add-task">タスクを記録</button>
   </form>
@@ -54,75 +49,43 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const taskList = document.getElementById('task-list');
+      const spreadsheetId = "YOUR_SPREADSHEET_ID"; // スプレッドシートIDを指定
+      let accessToken = "ya29.a0AeDClZBwtWVCZkbkUyWMkJY_ZI4lf4oAykP4-DlRCE51VH-0ynajaIxBR0LwQhO-iH8DoxNmqFB-CP4MnzSfJvWJnGB580isPpqbplRkuDF6hUS_fMJTda7nnvYm4QPPikj_ImrQly8DcSI4dQkKTPbqr1fsFqEcp95j56DOaCgYKAVMSARMSFQHGX2MiVkX5BYvrRLztrUDRIAAVdw0175";
+      const refreshToken = "1//04MBBtuFfjdRICgYIARAAGAQSNwF-L9Iryv3tLvHsdc9qo-4uHdo0W4hSAicaIz2GKHlbFvjVl3EbCzii42C7XnFwTAp1OJ0T4l0";
 
-      // 現在時刻を設定するボタン
-      document.getElementById('set-start-time').addEventListener('click', () => {
-        const now = new Date().toISOString().slice(0, 16);
-        document.getElementById('start-time').value = now;
-      });
+      async function refreshAccessToken() {
+        const clientId = "YOUR_CLIENT_ID"; // クライアントIDを指定
+        const clientSecret = "YOUR_CLIENT_SECRET"; // クライアントシークレットを指定
+        const tokenUrl = "https://oauth2.googleapis.com/token";
 
-      document.getElementById('set-end-time').addEventListener('click', () => {
-        const now = new Date().toISOString().slice(0, 16);
-        document.getElementById('end-time').value = now;
-      });
+        const response = await fetch(tokenUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            refresh_token: refreshToken,
+            grant_type: "refresh_token"
+          })
+        });
 
-      // タスクをレンダリング
-      function renderTask(task) {
-        const taskItem = document.createElement('div');
-        taskItem.className = 'task-item';
-        taskItem.innerHTML = `
-          <span><strong>${task.name}</strong> / ${task.date} / ${task.startTime} / ${task.endTime} / ${task.duration} 分</span>
-        `;
-        taskList.appendChild(taskItem);
+        const data = await response.json();
+        if (response.ok) {
+          accessToken = data.access_token;
+          console.log("アクセストークンが更新されました:", accessToken);
+        } else {
+          console.error("アクセストークンの更新に失敗しました:", data);
+        }
       }
 
-      // 記録ボタンがクリックされたとき
-      document.getElementById('add-task').addEventListener('click', async () => {
-        const taskName = document.getElementById('task-name').value.trim();
-        const startTimeInput = document.getElementById('start-time').value;
-        const endTimeInput = document.getElementById('end-time').value;
-
-        if (!taskName || !startTimeInput || !endTimeInput) {
-          alert("タスク名、開始時間、終了時間をすべて入力してください！");
-          return;
-        }
-
-        // 日時のフォーマット調整
-        const startDate = new Date(startTimeInput);
-        const endDate = new Date(endTimeInput);
-
-        const options = { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit" };
-        const startTime = startDate.toLocaleTimeString("ja-JP", options);
-        const endTime = endDate.toLocaleTimeString("ja-JP", options);
-        const date = startDate.toLocaleDateString("ja-JP", { year: "2-digit", month: "2-digit", day: "2-digit", weekday: "short" });
-
-        const duration = Math.round((endDate - startDate) / 1000 / 60);
-
-        const task = {
-          name: taskName,
-          date: date,
-          startTime: startTime,
-          endTime: endTime,
-          duration: duration
-        };
-
-        // タスクリストに表示
-        renderTask(task);
-
-        // Googleスプレッドシートに送信
-        await sendToGoogleSheets(task);
-      });
-
-      // Googleスプレッドシート送信処理
       async function sendToGoogleSheets(task) {
-        const spreadsheetId = "1sMlrpGP2MFRlygh8Q0WNK5LJA53QabVRdRuY2mhxero";
-        const accessToken = "ya29.a0AeDClZAXd9jhHjdD4zvbrL5Iy2IEieFOg0BnV8TQU7bWXleh2tW2JGXGgAeVrK7GNmgD3U84-lsZK_3F3mgQ4MyRZegxYv60Oj8FLXc19RlI9Po0RLbdkASpfBMrCT1BWj3urN95g8E10L6lrxdA1i-V2n-DI7cLzlIr2jeXaCgYKAfgSARMSFQHGX2Mi2KVtRZnmNtD7HmjjAEm_Pw0175";
-
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
 
         const data = {
           values: [
-            [task.name, task.date, task.startTime, task.endTime, `${task.duration} 分`]
+            [task.name, task.start, task.end, `${task.duration} 分`]
           ]
         };
 
@@ -138,9 +101,12 @@
 
           if (response.ok) {
             alert("Googleスプレッドシートに保存しました！");
+          } else if (response.status === 401) {
+            console.log("アクセストークンが無効です。更新を試みます...");
+            await refreshAccessToken();
+            await sendToGoogleSheets(task); // 再試行
           } else {
-            const errorText = await response.text();
-            console.error("Google Sheets APIエラー:", errorText);
+            console.error("Google Sheets APIエラー:", await response.text());
             alert("スプレッドシートへの送信に失敗しました");
           }
         } catch (error) {
@@ -148,6 +114,35 @@
           alert("Googleスプレッドシートに送信できませんでした");
         }
       }
+
+      document.getElementById('add-task').addEventListener('click', async () => {
+        const taskName = document.getElementById('task-name').value.trim();
+        const startTimeInput = document.getElementById('start-time').value;
+        const endTimeInput = document.getElementById('end-time').value;
+
+        if (!taskName || !startTimeInput || !endTimeInput) {
+          alert("タスク名、開始時間、終了時間をすべて入力してください！");
+          return;
+        }
+
+        const startDate = new Date(startTimeInput);
+        const endDate = new Date(endTimeInput);
+        const duration = Math.round((endDate - startDate) / 1000 / 60);
+
+        const task = {
+          name: taskName,
+          start: startDate.toLocaleString("ja-JP"),
+          end: endDate.toLocaleString("ja-JP"),
+          duration: duration
+        };
+
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task-item';
+        taskItem.textContent = `${task.name} / ${task.start} / ${task.end} / ${task.duration} 分`;
+        taskList.appendChild(taskItem);
+
+        await sendToGoogleSheets(task);
+      });
     });
   </script>
 </body>
