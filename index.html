@@ -1,32 +1,60 @@
-const apiKey = "AIzaSyDNQxL6zw3ZnGFsnH9JEQkoEg6ZHb7o4_8"; // あなたのAPIキー
-const spreadsheetId = "1sMlrpGP2MFRlygh8Q0WNK5LJA53QabVRdRuY2mhxero"; // スプレッドシートID
+<script>
+  const apiKey = "YOUR_API_KEY"; // 上で取得したAPIキー
+  const spreadsheetId = "YOUR_SPREADSHEET_ID"; // スプレッドシートID
 
-// Google Sheetsにデータを送信
-async function sendToGoogleSheets(task) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
+  // Google Sheetsにデータを送信
+  async function sendToGoogleSheets(task) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
 
-  const data = {
-    values: [
-      [task.name, task.start, task.end, `${task.duration} 分`]
-    ]
-  };
+    const data = {
+      values: [
+        [task.name, task.start, task.end, task.duration + " 分"]
+      ]
+    };
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`, // APIキーをAuthorizationヘッダーに含める
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(data),
+      });
 
-    if (response.ok) {
-      alert("Googleスプレッドシートに保存しました！");
-    } else {
-      console.error("エラー:", await response.text());
+      if (response.ok) {
+        alert("Googleスプレッドシートに保存しました！");
+      } else {
+        console.error("エラー:", await response.text());
+      }
+    } catch (error) {
+      console.error("送信中にエラーが発生しました:", error);
     }
-  } catch (error) {
-    console.error("送信中にエラーが発生しました:", error);
   }
-}
+
+  // タスクを保存するボタンイベントにGoogle Sheets連携を追加
+  document.getElementById("add-task").addEventListener("click", async () => {
+    const taskName = document.getElementById("task-name").value.trim();
+    const startTimeInput = document.getElementById("start-time").value;
+    const endTimeInput = document.getElementById("end-time").value;
+
+    if (!taskName || !startTimeInput || !endTimeInput) {
+      alert("タスク名と開始/終了時間を入力してください");
+      return;
+    }
+
+    const startTime = new Date(startTimeInput).toLocaleString("ja-JP");
+    const endTime = new Date(endTimeInput).toLocaleString("ja-JP");
+    const duration = ((new Date(endTimeInput) - new Date(startTimeInput)) / 1000 / 60).toFixed(2);
+
+    const task = {
+      name: taskName,
+      start: startTime,
+      end: endTime,
+      duration: duration
+    };
+
+    // Google Sheetsに送信
+    await sendToGoogleSheets(task);
+  });
+</script>
