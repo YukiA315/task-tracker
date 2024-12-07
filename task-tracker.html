@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仕事時間記録アプリ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .task-list {
+      margin-top: 20px;
+    }
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>仕事時間記録アプリ</h1>
+  <form id="task-form">
+    <label for="task-name">タスク名:</label>
+    <input type="text" id="task-name" placeholder="タスク名を入力" required>
+    <br>
+    <label for="start-time">開始時間:</label>
+    <input type="datetime-local" id="start-time">
+    <button type="button" id="set-start-time">現在時刻を設定</button>
+    <br>
+    <label for="end-time">終了時間:</label>
+    <input type="datetime-local" id="end-time">
+    <button type="button" id="set-end-time">現在時刻を設定</button>
+    <br>
+    <button type="button" id="add-task">タスクを記録</button>
+  </form>
+
+  <div class="task-list" id="task-list">
+    <h2>タスクリスト</h2>
+  </div>
+
+  <script>
+    const taskList = document.getElementById('task-list');
+    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+    // ローカル時刻を取得して入力フィールドにセット
+    function getLocalDatetime() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000; // ミリ秒単位のタイムゾーンオフセット
+      const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+      return localISOTime;
+    }
+
+    // タスクをリストに追加
+    function renderTaskList() {
+      taskList.innerHTML = '<h2>タスクリスト</h2>';
+      tasks.forEach((task, index) => {
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task-item';
+        taskItem.innerHTML = `
+          <span><strong>${task.name}</strong> - ${task.duration} 分</span>
+          <span>(${task.start} ～ ${task.end})</span>
+          <button onclick="deleteTask(${index})">削除</button>
+        `;
+        taskList.appendChild(taskItem);
+      });
+    }
+
+    // タスクを記録
+    document.getElementById('add-task').addEventListener('click', () => {
+      const taskName = document.getElementById('task-name').value.trim();
+      const startTimeInput = document.getElementById('start-time').value;
+      const endTimeInput = document.getElementById('end-time').value;
+
+      if (!taskName || !startTimeInput || !endTimeInput) {
+        alert('タスク名と開始/終了時間を入力してください');
+        return;
+      }
+
+      const startTime = new Date(startTimeInput);
+      const endTime = new Date(endTimeInput);
+      const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
+
+      const newTask = {
+        name: taskName,
+        start: startTime.toLocaleString(),
+        end: endTime.toLocaleString(),
+        duration: duration
+      };
+
+      tasks.push(newTask);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      renderTaskList();
+
+      // フォームをリセット
+      document.getElementById('task-form').reset();
+    });
+
+    // 現在時刻を設定
+    document.getElementById('set-start-time').addEventListener('click', () => {
+      document.getElementById('start-time').value = getLocalDatetime();
+    });
+
+    document.getElementById('set-end-time').addEventListener('click', () => {
+      document.getElementById('end-time').value = getLocalDatetime();
+    });
+
+    // タスクを削除
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      renderTaskList();
+    }
+
+    // 初期表示
+    renderTaskList();
+  </script>
+</body>
+</html>
