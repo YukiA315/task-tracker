@@ -4,31 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>タスク記録アプリ</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    input, button {
-      margin: 5px;
-      padding: 10px;
-      font-size: 16px;
-    }
-    .task-list {
-      margin-top: 20px;
-    }
-    .task-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      margin-left: 10px;
-    }
-  </style>
 </head>
 <body>
   <h1>タスク記録アプリ</h1>
@@ -38,26 +13,71 @@
     <br>
     <label for="start-time">開始時間:</label>
     <input type="datetime-local" id="start-time">
-    <button type="button" id="set-start-time">現在時刻を設定</button>
     <br>
     <label for="end-time">終了時間:</label>
     <input type="datetime-local" id="end-time">
-    <button type="button" id="set-end-time">現在時刻を設定</button>
     <br>
     <button type="button" id="add-task">タスクを記録</button>
   </form>
-
-  <div class="task-list" id="task-list">
-    <h2>タスクリスト</h2>
-  </div>
-
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // JavaScriptコード（タスク記録、Googleスプレッドシート送信など）をここに記述
-      document.getElementById('add-task').addEventListener('click', async () => {
-        alert("タスクが正常に記録されました！（テスト）");
+      // ボタンイベント設定
+      const addTaskButton = document.getElementById('add-task');
+      addTaskButton.addEventListener('click', async () => {
+        const taskName = document.getElementById('task-name').value.trim();
+        const startTimeInput = document.getElementById('start-time').value;
+        const endTimeInput = document.getElementById('end-time').value;
+
+        if (!taskName || !startTimeInput || !endTimeInput) {
+          alert("タスク名、開始時間、終了時間をすべて入力してください！");
+          return;
+        }
+
+        const task = {
+          name: taskName,
+          start: startTimeInput,
+          end: endTimeInput,
+          duration: ((new Date(endTimeInput) - new Date(startTimeInput)) / 1000 / 60).toFixed(0)
+        };
+
+        console.log("タスク送信:", task);
+
+        // Googleスプレッドシートに送信
+        await sendToGoogleSheets(task);
       });
     });
+
+    async function sendToGoogleSheets(task) {
+      const spreadsheetId = "1sMlrpGP2MFRlygh8Q0WNK5LJA53QabVRdRuY2mhxero";
+      const accessToken = "ya29.a0AeDClZAXd9jhHjdD4zvbrL5Iy2IEieFOg0BnV8TQU7bWXleh2tW2JGXGgAeVrK7GNmgD3U84-lsZK_3F3mgQ4MyRZegxYv60Oj8FLXc19RlI9Po0RLbdkASpfBMrCT1BWj3urN95g8E10L6lrxdA1i-V2n-DI7cLzlIr2jeXaCgYKAfgSARMSFQHGX2Mi2KVtRZnmNtD7HmjjAEm_Pw0175";
+
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
+
+      const data = {
+        values: [
+          [task.name, task.start, task.end, `${task.duration} 分`]
+        ]
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+          alert("Googleスプレッドシートに保存しました！");
+        } else {
+          console.error("エラー:", await response.text());
+        }
+      } catch (error) {
+        console.error("送信エラー:", error);
+      }
+    }
   </script>
 </body>
 </html>
