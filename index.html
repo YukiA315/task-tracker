@@ -52,14 +52,14 @@
   </div>
 
   <script>
-    // Google Sheets API設定
-    const apiKey = "AIzaSyDNQxL6zw3ZnGFsnH9JEQkoEg6ZHb7o4_8"; // APIキー
+    // Google Sheets API 設定
     const spreadsheetId = "1sMlrpGP2MFRlygh8Q0WNK5LJA53QabVRdRuY2mhxero"; // スプレッドシートID
+    const accessToken = "ya29.a0AeDClZAXd9jhHjdD4zvbrL5Iy2IEieFOg0BnV8TQU7bWXleh2tW2JGXGgAeVrK7GNmgD3U84-lsZK_3F3mgQ4MyRZegxYv60Oj8FLXc19RlI9Po0RLbdkASpfBMrCT1BWj3urN95g8E10L6lrxdA1i-V2n-DI7cLzlIr2jeXaCgYKAfgSARMSFQHGX2Mi2KVtRZnmNtD7HmjjAEm_Pw0175"; // OAuthアクセストークン
 
-    // 現在のタスクリストを保存
+    // タスクリストを表示するエリア
     const taskList = document.getElementById('task-list');
 
-    // タスクをGoogleスプレッドシートに送信
+    // Googleスプレッドシートにタスクを送信
     async function sendToGoogleSheets(task) {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:append?valueInputOption=USER_ENTERED`;
 
@@ -74,7 +74,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
+            Authorization: `Bearer ${accessToken}`
           },
           body: JSON.stringify(data),
         });
